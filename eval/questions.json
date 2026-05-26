@@ -1,0 +1,193 @@
+[
+  {
+    "id": "call_prep_full_context",
+    "skill": "call_prep",
+    "description": "Call prep with full Salesforce + Blueprint + interview data",
+    "input": {
+      "account_name": "Acme Corp",
+      "stage": "S4",
+      "deal_size": 250000,
+      "stakeholders": [
+        {"name": "Jane Chen", "role": "Head of Data Engineering"},
+        {"name": "Mike Ross", "role": "Data Governance Lead"},
+        {"name": "Sarah Kim", "role": "VP Analytics"}
+      ],
+      "last_activity_notes": "Demo scheduled for next week. Jane expressed concern about lineage visibility across their Snowflake + Databricks stack. Mike wants to understand PII governance automation.",
+      "blueprint_tech_tab": {"connectors": ["Snowflake", "Databricks"], "auth_snowflake": "key-pair", "volume": "2TB"},
+      "interview_summaries": ["Jane: 'We spend 40% of our time tracing data issues. Lineage is our #1 pain point.'"]
+    },
+    "expected": {
+      "contains": ["Jane Chen", "lineage", "PII governance", "Snowflake", "Databricks"],
+      "has_sections": ["Attendees", "Pain points", "Suggested talking points"],
+      "confidence": "high"
+    }
+  },
+  {
+    "id": "call_prep_minimal_data",
+    "skill": "call_prep",
+    "description": "Call prep with only Salesforce stage and stakeholder names",
+    "input": {
+      "account_name": "NewCo Inc",
+      "stage": "S3",
+      "deal_size": 100000,
+      "stakeholders": [{"name": "Alex Doe", "role": "Unknown"}],
+      "last_activity_notes": null,
+      "blueprint_tech_tab": null,
+      "interview_summaries": []
+    },
+    "expected": {
+      "contains": ["NewCo", "S3"],
+      "flags_gaps": true,
+      "confidence": "caveated",
+      "suggests_next_steps": true
+    }
+  },
+  {
+    "id": "blueprint_accel_with_atlan",
+    "skill": "blueprint_accelerator",
+    "description": "Blueprint acceleration with Atlan metadata available for pre-population",
+    "input": {
+      "account_name": "DataCo",
+      "stage": "S4",
+      "blueprint_tech_tab": {"connectors": ["Snowflake"], "auth_snowflake": null, "volume": null},
+      "atlan_connectors": [
+        {"type": "Snowflake", "ingested_assets": 500, "tables": 120},
+        {"type": "Databricks", "ingested_assets": 200, "tables": 45}
+      ]
+    },
+    "expected": {
+      "pre_populates": ["Databricks"],
+      "flags_missing": ["auth_snowflake", "volume"],
+      "never_guesses_auth": true,
+      "marks_pre_populated": true
+    }
+  },
+  {
+    "id": "arch_diagram_insufficient_data",
+    "skill": "architecture_diagram",
+    "description": "Architecture diagram with no Blueprint and no Atlan — must produce skeleton only",
+    "input": {
+      "account_name": "EmptyCo",
+      "stage": "S5",
+      "blueprint_tech_tab": null,
+      "atlan_connectors": []
+    },
+    "expected": {
+      "confidence": "skeleton",
+      "has_placeholders": true,
+      "no_hallucinated_infrastructure": true,
+      "lists_missing_data": true
+    }
+  },
+  {
+    "id": "arch_diagram_stale_data",
+    "skill": "architecture_diagram",
+    "description": "Architecture diagram with 72h-old Atlan data during production planning",
+    "input": {
+      "account_name": "StaleCo",
+      "stage": "S5",
+      "blueprint_tech_tab": {"connectors": ["Snowflake", "Postgres"], "auth_snowflake": "oauth", "auth_postgres": "password"},
+      "atlan_connectors": [{"type": "Snowflake", "ingested_assets": 300}],
+      "data_freshness": {"atlan": "72h_old"}
+    },
+    "expected": {
+      "staleness_warning": true,
+      "recommends_revalidation": true,
+      "confidence": "caveated"
+    }
+  },
+  {
+    "id": "sprint_criteria_net_new",
+    "skill": "sprint_success_criteria",
+    "description": "Success criteria for net-new customer (no Atlan tenant)",
+    "input": {
+      "account_name": "FreshStart Ltd",
+      "stage": "S5",
+      "atlan_tenant": null,
+      "atlan_connectors": [],
+      "stated_use_cases": ["data governance", "lineage visibility"]
+    },
+    "expected": {
+      "maturity": "net_new",
+      "criteria_are_foundational": true,
+      "contains": ["connector setup", "glossary", "lineage"],
+      "does_not_expose_inference_logic": true
+    }
+  },
+  {
+    "id": "sprint_criteria_expansion",
+    "skill": "sprint_success_criteria",
+    "description": "Success criteria for expansion customer (existing connectors + metadata)",
+    "input": {
+      "account_name": "GrowthCo",
+      "stage": "S5",
+      "atlan_tenant": "growthco.atlan.com",
+      "atlan_connectors": [
+        {"type": "Snowflake", "ingested_assets": 1200, "tables": 300},
+        {"type": "Looker", "ingested_assets": 50, "tables": 0}
+      ],
+      "has_governance_tags": false,
+      "has_lineage": true,
+      "stated_use_cases": ["add Databricks connector", "implement PII governance"]
+    },
+    "expected": {
+      "maturity": "expansion",
+      "criteria_are_advanced": true,
+      "contains": ["Databricks", "governance", "PII"],
+      "does_not_expose_inference_logic": true
+    }
+  },
+  {
+    "id": "connector_docs_no_auth",
+    "skill": "connector_docs",
+    "description": "Connector docs where auth method is missing from Blueprint",
+    "input": {
+      "account_name": "SecureCo",
+      "stage": "S5",
+      "blueprint_tech_tab": {"connectors": ["Snowflake", "BigQuery"], "auth_snowflake": "key-pair", "auth_bigquery": null},
+      "atlan_connectors": [{"type": "BigQuery", "ingested_assets": 80}]
+    },
+    "expected": {
+      "snowflake_has_auth": true,
+      "bigquery_auth_flagged_unknown": true,
+      "never_guesses_auth": true,
+      "confidence": "caveated"
+    }
+  },
+  {
+    "id": "demo_plan_no_interviews",
+    "skill": "demo_planner",
+    "description": "Demo plan at S4 with no user interviews documented",
+    "input": {
+      "account_name": "RushCo",
+      "stage": "S4",
+      "deal_size": 300000,
+      "interview_summaries": [],
+      "blueprint_tech_tab": {"connectors": ["Snowflake"]},
+      "product_interest": ["governance", "lineage"]
+    },
+    "expected": {
+      "flags_missing_interviews": true,
+      "generates_generic_plan": true,
+      "marks_as_incomplete": true,
+      "mentions_3_interview_requirement": true
+    }
+  },
+  {
+    "id": "stage_readiness_s4_incomplete",
+    "skill": "stage_readiness_checker",
+    "description": "S4 account with incomplete Blueprint tech tab — should flag as blocking",
+    "input": {
+      "account_name": "BlockedCo",
+      "stage": "S4",
+      "blueprint_tech_tab": {"connectors": ["Snowflake"], "auth_snowflake": null, "volume": null},
+      "interview_summaries": []
+    },
+    "expected": {
+      "flags_blueprint_incomplete": true,
+      "flags_missing_interviews": true,
+      "actionable_next_steps": true,
+      "specific_questions_suggested": true
+    }
+  }
+]
